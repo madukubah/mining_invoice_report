@@ -7,8 +7,8 @@ import calendar
 import logging
 _logger = logging.getLogger(__name__)
 
-class MiningCostPerformanceReport(models.TransientModel):
-    _name = 'mining.cost.performance.report'
+class MiningInvoiceReport(models.TransientModel):
+    _name = 'mining.invoice.report'
 
     @api.model
     def _default_config(self):

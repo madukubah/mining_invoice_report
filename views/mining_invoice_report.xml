@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <report
+                id="mining_invoice_report"
+                string="Mining Invoice Report"
+                model="account.invoice"
+                report_type="qweb-pdf"
+                file="mining_invoice_report.report_mining_invoice"
+                name="mining_invoice_report.report_mining_invoice"
+        />
+    </data>
+</odoo>

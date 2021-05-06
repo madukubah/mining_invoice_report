@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_account_invoice_form_inherit" model="ir.ui.view">
+        <field name="name">account.invoice.form.inherit</field>
+        <field name="model">account.invoice</field>
+        <field name="inherit_id" ref="account.invoice_form"/>
+        <field name="priority" eval="8"/>
+        <field name="arch" type="xml">
+            <xpath expr="/form/header/button[@name='invoice_print']" position="after">
+                <button name="invoice_print" string="Print Invoice ( SJSU )" class="btn-primary" type="object" />
+            </xpath>
+
+            <xpath expr="/form/header/button[@name='invoice_print'][1]" position="attributes" >
+                    <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="/form/header/button[@name='invoice_print'][2]" position="attributes" >
+                    <attribute name="invisible">1</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>
