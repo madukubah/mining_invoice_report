@@ -1,3 +1,0 @@
-id,name,model_id/id,group_id/id,perm_read,perm_write,perm_create,perm_unlink
-qaqc_coa_acces_right_manager,qaqc_coa_acces_right_manager,model_qaqc_coa,qaqc_group_manager,1,1,1,1
-qaqc_coa_acces_right_user,qaqc_coa_acces_right_user,model_qaqc_coa,qaqc_group_user,1,1,1,0

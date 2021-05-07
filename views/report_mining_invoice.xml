@@ -16,7 +16,7 @@
                     <strong>TO</strong>
                 </div>
                 <div class="col-xs-8" >
-                    <strong >: <span t-esc="'INDONESIA RUIPU NICKEL AND CHROME ALLOY'" /> </strong>
+                    <strong >: <span t-esc="o.partner_id.name" /> </strong>
                 </div>
             </div>
             <div class="row">
@@ -40,7 +40,7 @@
                     <strong>SPECIFICATION</strong>
                 </div>
                 <div class="col-xs-8" >
-                    <strong >: <span t-esc="'ANINDYA'" /> </strong>
+                    <strong >: <span t-esc="detailed_data['surveyor']"/> </strong>
                 </div>
             </div>
             <div class="row">
@@ -48,7 +48,7 @@
                     <strong>CONTRACT NUMBER</strong>
                 </div>	
                 <div class="col-xs-8" >
-                    <strong >: <span t-esc="'IRNC-N-21102'" /> </strong>
+                    <strong >: <span t-esc="detailed_data['contract']"/> </strong>
                 </div>
             </div>
             <div class="row">
@@ -56,7 +56,7 @@
                     <strong>SHIP</strong>
                 </div>
                 <div class="col-xs-8" >
-                    <strong >: <span t-esc="'Buana Success 21/Golden Way 2305'" /> </strong>
+                    <strong >: <span t-esc="detailed_data['barge']"/> </strong>
                 </div>
             </div>
             <br/>
@@ -114,101 +114,88 @@
                         <td class="text-left"> <span t-esc="detailed_data['base_price']"/> </td>
                         <td class="text-left">IDR</td>
                     </tr>
+                    <tr>
+                        <td class="text-left"></td>
+                        <td class="text-left" colspan="4"></td>
+                        <td class="text-left"></td>
+                        <td class="text-left"></td>
+                    </tr>
+                    <tr t-foreach="detailed_data['lines']['main']" t-as="l" >
+                        <td class="text-left">Cargo Value</td>
+                        <td class="text-left" > <span t-esc="l['qty']"/> </td>
+                        <td class="text-left" > <span t-esc="l['uom']"/> </td>
+                        <td class="text-left" > </td>
+                        <td class="text-left" > <span t-esc="l['price_unit']"/> </td>
+                        <td class="text-left"> <span t-esc="l['amount']"/> </td>
+                        <td class="text-left">IDR</td>
+                    </tr>
+                    <tr t-foreach="detailed_data['lines']['main']" t-as="l" >
+                        <td class="text-left"></td>
+                        <td class="text-left" colspan="4"> <span t-esc="l['name']"/> </td>
+                        <td class="text-left"> <span t-esc="l['amount']"/> </td>
+                        <td class="text-left">IDR</td>
+                    </tr>
+                    <tr t-foreach="detailed_data['lines']['others']" t-as="l" >
+                        <td class="text-left"></td>
+                        <td class="text-left" colspan="4"> <span t-esc="l['name']"/> </td>
+                        <td class="text-left"> <span t-esc="l['amount']"/> </td>
+                        <td class="text-left">IDR</td>
+                    </tr>
+                    <tr >
+                        <td class="text-left"></td>
+                        <td class="text-left" colspan="4"> <strong> Total </strong> </td>
+                        <td class="text-left"> <span t-field="o.amount_total" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/> </td>
+                        <td class="text-left">IDR</td>
+                    </tr>
                 </tbody>
             </table>
             <!-- Is there a discount on at least one line? -->
-            <t t-set="display_discount" t-value="any([l.discount for l in o.invoice_line_ids])"/>
-
-            <table class="table table-condensed">
-                <thead>
-                    <tr>
-                        <th>Description</th>
-                        <th class="hidden">Source Document</th>
-                        <th class="text-right">Quantity</th>
-                        <th class="text-right">Unit Price</th>
-                        <th t-if="display_discount" class="text-right">Disc.(%)</th>
-                        <th class="text-right">Taxes</th>
-                        <th class="text-right">Tax Excluded Price</th>
-                    </tr>
-                </thead>
-                <tbody class="invoice_tbody">
-                    <tr t-foreach="o.invoice_line_ids" t-as="l">
-                        <td><span t-field="l.name"/></td>
-                        <td class="hidden"><span t-field="l.origin"/></td>
-                        <td class="text-right">
-                            <span t-field="l.quantity"/>
-                            <span t-field="l.uom_id"  groups="product.group_uom"/>
-                        </td>
-                        <td class="text-right">
-                            <span t-field="l.price_unit"/>
-                        </td>
-                        <td t-if="display_discount" class="text-right">
-                            <span t-field="l.discount"/>
-                        </td>
-                        <td class="text-right">
-                            <span t-esc="', '.join(map(lambda x: (x.description or x.name), l.invoice_line_tax_ids))"/>
-                        </td>
-                        <td class="text-right">
-                            <span t-field="l.price_subtotal" 
-                                t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-
+            <p >
+                <strong>Says:</strong>
+                <span t-esc="detailed_data['says']"/>
+            </p>
+            
             <div class="row">
-                <div class="col-xs-4 pull-right">
-                    <table class="table table-condensed">
-                        <tr class="border-black">
-                            <td><strong>Subtotal</strong></td>
-                            <td class="text-right">
-                                <span t-field="o.amount_untaxed" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
-                            </td>
-                        </tr>
-                        <t t-foreach="o._get_tax_amount_by_group()" t-as="amount_by_group">
-                            <tr>
-                                <td><span t-esc="amount_by_group[0] if len(o.tax_line_ids) > 1 else (o.tax_line_ids.tax_id.description or o.tax_line_ids.tax_id.name)"/></td>
-                                <td class="text-right">
-                                    <span t-esc="amount_by_group[2]"/>
-                                </td>
-                            </tr>
-                        </t>
-                        <tr class="border-black">
-                            <td><strong>Total</strong></td>
-                            <td class="text-right">
-                                 <span t-field="o.amount_total" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
-                            </td>
-                        </tr>
-                    </table>
+                <div class="col-xs-4">
+                    <strong>BANK INFORMATION</strong>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-4">
+                    <strong>BANK NAME</strong>
+                </div>
+                <div class="col-xs-8" >
+                    <strong >: <span t-esc="'MANDIRI CABANG MESJID AGUNG, MANDONGA KENDARI'" /> </strong>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-4">
+                    <strong>ACCOUNT NO</strong>
+                </div>
+                <div class="col-xs-8" >
+                    <strong >: <span t-esc="'162 000 787 7776'" /> </strong>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-4">
+                    <strong>ACCOUNT NAME</strong>
+                </div>
+                <div class="col-xs-8" >
+                    <strong >: <span t-esc="'PT. SINAR JAYA SULTRA UTAMA'" /> </strong>
+                </div>
+            </div>
+            <br/>
+            <div class="row">
+                <div class="col-xs-12 text-center">
+                    Kendari, <span t-esc="detailed_data['sign']['date']"/><br/>
+                    PT. SINAR JAYA SULTRA UTAMA
+                    <br/><br/><br/><br/>
+                    <u>HERRY ASIKU, SE</u><br/>
+                    Director
                 </div>
             </div>
 
-            <!-- DO NOT REMOVE THIS TABLE. MANDATORY IN SOME COUNTRIES -->
-            <div class="row" t-if="len(o.tax_line_ids) > 0">
-                <div class="col-xs-6">
-                    <table class="table table-condensed">
-                        <thead>
-                            <tr>
-                                <th>Tax</th>
-                                <th class="text-right">Base</th>
-                                <th class="text-right">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr t-foreach="o.tax_line_ids" t-as="t">
-                                <td><span t-field="t.tax_id.description"/></td>
-                                <td class="text-right">
-                                    <span t-field="t.base" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
-                                </td>
-                                <td class="text-right">
-                                    <span t-field="t.amount" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
+            <br/><br/>
             <p t-if="o.comment">
                 <strong>Comment:</strong>
                 <span t-field="o.comment"/>

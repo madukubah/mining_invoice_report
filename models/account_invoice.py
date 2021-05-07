@@ -13,14 +13,43 @@ from odoo.exceptions import UserError, RedirectWarning, ValidationError
 
 import odoo.addons.decimal_precision as dp
 import logging
+from openerp.tools import amount_to_text_en
 
 _logger = logging.getLogger(__name__)
-
 
 class AccountInvoice(models.Model):
     _inherit = "account.invoice"
 
+
+    def _get_inv_lines(self ):
+        self.ensure_one()
+        lines = {
+            "main" :[],
+            "others" :[]
+        }
+        for invoice_line_id in self.invoice_line_ids :
+            if invoice_line_id.product_id.base_price :
+                lines["main"] += [{
+                    "name" : "Total Cargo Value",
+                    "amount" : '{:,}'.format( invoice_line_id.price_subtotal ) ,
+                    "qty" : '{:,}'.format( invoice_line_id.quantity ) ,
+                    "price_unit" : '{:,}'.format( invoice_line_id.price_unit ) ,
+                    "uom" : invoice_line_id.uom_id.name ,
+                }]
+            else :
+                lines["others"] += [{
+                    "name" : invoice_line_id.name ,
+                    "amount" : '{:,}'.format( invoice_line_id.price_subtotal ) ,
+                    "qty" : '{:,}'.format( invoice_line_id.quantity ) ,
+                    "price_unit" : '{:,}'.format( invoice_line_id.price_unit ) ,
+                    "uom" : invoice_line_id.uom_id.name ,
+                }]
+
+        return lines
+
+
     def _get_assays(self, coa_id, contract_id):
+        self.ensure_one()
         corrective_factor = contract_id.corrective_factor
         base_price_components = self.env['sale.contract.base.price.component'].sudo().search( [( 'sale_contract_id', '=', contract_id.id )] )
         price_component_dict = {
@@ -72,21 +101,24 @@ class AccountInvoice(models.Model):
             "assay_rows" : assay_rows,
         }
 
-
-
     @api.multi
     def _get_detailed_data(self):
         self.ensure_one()
         res = {}
         res["name"] = ""
         res["cf"] = ""
-        # try:
+
         sale_order = self.env['sale.order'].sudo().search( [ ("name", "=", self.origin) ], limit=1 )
         coa_id = sale_order.coa_id
         contract_id = sale_order.contract_id
         shipping_id = sale_order.shipping_id
         assays = self._get_assays( coa_id, contract_id )
+
+        res["contract"] = contract_id.name
+
         res["cf"] = assays["corrective_factor"]
+        res["surveyor"] = coa_id.surveyor_id.name
+        res["barge"] = shipping_id.barge_activity_id.name
         res["assay_rows"] = assays["assay_rows"]
         res["qty"] = '{:,}'.format(shipping_id.quantity)
 
@@ -98,12 +130,22 @@ class AccountInvoice(models.Model):
         res["base_price_txt"] = "Kurs " + date.strftime("%Y") + " IDR " + '{:,}'.format( sale_order.currency ) + " x USD " + res["cif_price"]
         res["base_price"] = '{:,}'.format( round( sale_order.hpm_price * sale_order.currency, 0 ) )
 
-
-        # except:
-        #     _logger.warning("Something went wrong")
-        # finally:
-        #     _logger.warning("The 'try except' is finished") 
+        res["says"] = amount_to_text_en.amount_to_text( self.amount_total, 'en', "usd")
         
+        date = datetime.strptime( self.date_invoice, '%Y-%m-%d' )
+        res["sign"] = {
+            "date" : date.strftime("%d %B %Y")
+        }
+
+        res["lines"] = self._get_inv_lines()
+        if not res["lines"]['main'] :
+            res["lines"]['main'] = [{
+                "name" : "Total Cargo Value",
+                "amount" : '{:,}'.format( round( shipping_id.quantity * sale_order.hpm_price * sale_order.currency, 0 ) ) ,
+                "qty" : res["qty"] ,
+                "price_unit" : res["base_price"] ,
+                "uom" : "WMT" ,
+            }]
 
         return res
 
@@ -118,20 +160,17 @@ class AccountInvoice(models.Model):
     
     @api.multi
     def action_invoice_draft(self):
-        if self.filtered(lambda inv: inv.state != 'cancel'):
-            raise UserError(_("Invoice must be cancelled in order to reset it to draft."))
-        # go from canceled state to draft state
-        self.write({'state': 'draft', 'date': False})
-        # Delete former printed invoice
-        try:
-            report_invoice = self.env['report']._get_report_from_name('account.report_invoice')
-        except IndexError:
-            report_invoice = False
-        if report_invoice and report_invoice.attachment:
-            for invoice in self:
-                with invoice.env.do_in_draft():
-                    invoice.number, invoice.state = invoice.move_name, 'open'
-                    attachment = self.env['report']._attachment_stored(invoice, report_invoice)[invoice.id]
-                if attachment:
-                    attachment.unlink()
-        return True
+        res = super(AccountInvoice, self).action_invoice_draft() 
+        if res:
+            try:
+                report_invoice = self.env['report']._get_report_from_name('mining_invoice_report.report_mining_invoice')
+            except IndexError:
+                report_invoice = False
+            if report_invoice and report_invoice.attachment:
+                for invoice in self:
+                    with invoice.env.do_in_draft():
+                        invoice.number, invoice.state = invoice.move_name, 'open'
+                        attachment = self.env['report']._attachment_stored(invoice, report_invoice)[invoice.id]
+                    if attachment:
+                        attachment.unlink()
+        return res

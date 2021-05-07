@@ -8,6 +8,7 @@
                 report_type="qweb-pdf"
                 file="mining_invoice_report.report_mining_invoice"
                 name="mining_invoice_report.report_mining_invoice"
+                attachment="object.number + '.pdf'"
         />
     </data>
 </odoo>
