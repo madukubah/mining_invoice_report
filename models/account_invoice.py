@@ -130,7 +130,7 @@ class AccountInvoice(models.Model):
         res["base_price_txt"] = "Kurs " + date.strftime("%Y") + " IDR " + '{:,}'.format( sale_order.currency ) + " x USD " + res["cif_price"]
         res["base_price"] = '{:,}'.format( round( sale_order.hpm_price * sale_order.currency, 0 ) )
 
-        res["says"] = amount_to_text_en.amount_to_text( self.amount_total, 'en', "usd")
+        res["says"] = amount_to_text_en.amount_to_text( self.amount_total, 'en', "Rupiah")
         
         date = datetime.strptime( self.date_invoice, '%Y-%m-%d' )
         res["sign"] = {
